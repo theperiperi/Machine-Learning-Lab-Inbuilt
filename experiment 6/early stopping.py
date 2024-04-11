@@ -1,143 +1,48 @@
+import pandas as pd
 import numpy as np
-from sklearn import datasets
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
-# Load Iris dataset
-iris = datasets.load_iris()
-X = iris.data  # Features
-y = iris.target  # Target labels
+df=pd.read_csv("data.csv")
 
-# Normalize features (optional)
-X = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
+# Load breast cancer dataset
+X=df.drop("diagnosis",axis=1)
+y=df["diagnosis"]
 
-# One-hot encode the target labels
-num_classes = len(np.unique(y))
-y_one_hot = np.eye(num_classes)[y]
+X=X.fillna(np.mean(X))
+# Split the data into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Split the dataset into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y_one_hot, test_size=0.2, random_state=42)
 
-# Set up neural network parameters
-input_size = X.shape[1]
-hidden_size1 = 5  # Adjust the number of nodes in the first hidden layer as needed
-hidden_size2 = 3  # Adjust the number of nodes in the second hidden layer as needed
-output_size = num_classes
+scaler=StandardScaler()
+X_train=scaler.fit_transform(X_train)
+X_test=scaler.transform(X_test)
 
-# Initialize weights and biases for the neural network
-mw1 = np.random.rand(input_size, hidden_size1)
-mw2 = np.random.rand(hidden_size1, hidden_size2)
-nw = np.random.rand(hidden_size2, output_size)
-bh1 = np.random.rand(hidden_size1)
-bh2 = np.random.rand(hidden_size2)
-bo = np.random.rand(output_size)
+import numpy as np
 
-mew = 0.01  # Learning rate
+# Create noisy data (Gaussian noise)
+X_noisy = X + np.random.normal(0, 0.05, X.shape)
 
-# Activation function (sigmoid)
-def act(num):
-    return 1 / (1 + np.exp(-num))
+# Combine original data and noisy data
+X_combined = np.vstack((X, X_noisy))
+y_combined = np.hstack((y, y))  # Use original labels for both original and noisy data
 
-# Training the neural network
-min_accuracy = 0
-best_epoch = 0
-for epoch in range(1000):  # Adjust the number of epochs as needed
-    correct_predictions = 0  # Reset correct_predictions for each epoch
-    for i in range(len(X_train)):
-        # Forward pass
-        z1 = X_train[i].dot(mw1) + bh1
-        z1_act = act(z1)
-        z2 = z1_act.dot(mw2) + bh2
-        z2_act = act(z2)
-        y_pred = z2_act.dot(nw) + bo
-        y_act = act(y_pred)
+# Split the combined data into train and test sets
+X_train_comb, X_test_comb, y_train_comb, y_test_comb = train_test_split(X_combined, y_combined, test_size=0.2, random_state=42)
+# Create an MLP Classifier with Early Stopping
+mlp_early_stop = MLPClassifier(hidden_layer_sizes=(100, 50), activation='relu', alpha=0.0001, solver='adam',
+                               batch_size='auto', learning_rate='constant', learning_rate_init=0.001,
+                               max_iter=500, tol=1e-4, early_stopping=True, validation_fraction=0.1,
+                               n_iter_no_change=10, random_state=42)
 
-        # Backpropagation
-        err = y_train[i] - y_act
-        efnih2 = err * y_act * (1 - y_act)
-        efnhj2 = efnih2.dot(nw.T) * z2_act * (1 - z2_act)
-        efnhj1 = efnhj2.dot(mw2.T) * z1_act * (1 - z1_act)
+# Fit the model
+mlp_early_stop.fit(X_train, y_train)
 
-        # Weight and bias updates
-        mw1 += mew * X_train[i][:, np.newaxis] @ efnhj1[np.newaxis, :]
-        mw2 += mew * z1_act[:, np.newaxis] @ efnhj2[np.newaxis, :]
-        nw += mew * z2_act[:, np.newaxis] @ efnih2[np.newaxis, :]
-        bh1 += mew * efnhj1 
-        bh2 += mew * efnhj2 
-        bo += mew * efnih2 
+# Predict on the test data
+y_pred_early_stop = mlp_early_stop.predict(X_test)
 
-        # Check for correct predictions during training
-        predicted_class = np.argmax(y_act)
-        true_class = np.argmax(y_train[i])
-        if predicted_class == true_class:
-            correct_predictions += 1
-
-    # Calculate training accuracy for this epoch
-    training_accuracy = correct_predictions / len(X_train)
-    
-    # Testing the trained network on validation set
-    correct_predictions = 0
-    for i in range(len(X_test)):
-        z1 = X_test[i].dot(mw1) + bh1
-        z1_act = act(z1)
-        z2 = z1_act.dot(mw2) + bh2
-        z2_act = act(z2)
-        y_pred = z2_act.dot(nw) + bo
-        y_act = act(y_pred)
-
-        predicted_class = np.argmax(y_act)
-        true_class = np.argmax(y_test[i])
-
-        if predicted_class == true_class:
-            correct_predictions += 1
-
-    # Calculate validation accuracy for this epoch
-    validation_accuracy = correct_predictions / len(X_test)
-    
-    # Update best epoch if validation accuracy improves
-    if validation_accuracy > min_accuracy:
-        min_accuracy = validation_accuracy
-        best_epoch = epoch
-
-# Retrain the network on the best epoch
-for epoch in range(best_epoch + 1):
-    for i in range(len(X_train)):
-        # Forward pass
-        z1 = X_train[i].dot(mw1) + bh1
-        z1_act = act(z1)
-        z2 = z1_act.dot(mw2) + bh2
-        z2_act = act(z2)
-        y_pred = z2_act.dot(nw) + bo
-        y_act = act(y_pred)
-
-        # Backpropagation
-        err = y_train[i] - y_act
-        efnih2 = err * y_act * (1 - y_act)
-        efnhj2 = efnih2.dot(nw.T) * z2_act * (1 - z2_act)
-        efnhj1 = efnhj2.dot(mw2.T) * z1_act * (1 - z1_act)
-
-        # Weight and bias updates
-        mw1 += mew * X_train[i][:, np.newaxis] @ efnhj1[np.newaxis, :]
-        mw2 += mew * z1_act[:, np.newaxis] @ efnhj2[np.newaxis, :]
-        nw += mew * z2_act[:, np.newaxis] @ efnih2[np.newaxis, :]
-        bh1 += mew * efnhj1 
-        bh2 += mew * efnhj2 
-        bo += mew * efnih2 
-
-# Testing the trained network on test set
-correct_predictions = 0
-for i in range(len(X_test)):
-    z1 = X_test[i].dot(mw1) + bh1
-    z1_act = act(z1)
-    z2 = z1_act.dot(mw2) + bh2
-    z2_act = act(z2)
-    y_pred = z2_act.dot(nw) + bo
-    y_act = act(y_pred)
-
-    predicted_class = np.argmax(y_act)
-    true_class = np.argmax(y_test[i])
-
-    if predicted_class == true_class:
-        correct_predictions += 1
-
-accuracy = correct_predictions / len(X_test)
-print(f"Final Test Accuracy: {accuracy}")
+# Calculate accuracy
+accuracy_early_stop = accuracy_score(y_test, y_pred_early_stop)
+print("MLP with Early Stopping Accuracy:", accuracy_early_stop)
