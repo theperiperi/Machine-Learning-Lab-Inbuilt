@@ -1,74 +1,62 @@
+import pandas as pd
 import numpy as np
-from sklearn import datasets
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-import time
-from keras.layers import Dense
-from keras.models import Sequential
+from sklearn.metrics import accuracy_score
 
-# Load Iris dataset
-iris = datasets.load_iris()
-X = iris.data  # Features
-y = iris.target  # Target labels
+df=pd.read_csv("data.csv")
 
-# Normalize features (optional)
-X = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
+# Load breast cancer dataset
+X=df.drop("diagnosis",axis=1)
+y=df["diagnosis"]
 
-# One-hot encode the target labels
-num_classes = len(np.unique(y))
-y_one_hot = np.eye(num_classes)[y]
+X=X.fillna(np.mean(X))
+# Split the data into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Split the dataset into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y_one_hot, test_size=0.2, random_state=42)
 
-# Set up neural network parameters
-input_size = X.shape[1]
-hidden_size1 = 5  # Adjust the number of nodes in the first hidden layer as needed
-hidden_size2 = 3  # Adjust the number of nodes in the second hidden layer as needed
-output_size = num_classes
+scaler=StandardScaler()
+X_train=scaler.fit_transform(X_train)
+X_test=scaler.transform(X_test)
 
-# Initialize the neural network model
-model = Sequential()
-model.add(Dense(hidden_size1, input_dim=input_size, activation='sigmoid'))
-model.add(Dense(hidden_size2, activation='sigmoid'))
-model.add(Dense(output_size, activation='softmax'))
+# Initialize MLP classifiers with different optimizers
+mlp_sgd = MLPClassifier(hidden_layer_sizes=(100, 50), activation='relu', alpha=0.0001, solver='sgd',
+                        batch_size='auto', learning_rate='constant', learning_rate_init=0.001,
+                        max_iter=500, tol=1e-4, early_stopping=False, random_state=42)
 
-# Compile the model with SGD optimizer
-model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy'])
+mlp_adam = MLPClassifier(hidden_layer_sizes=(100, 50), activation='relu', alpha=0.0001, solver='adam',
+                         batch_size='auto', learning_rate='constant', learning_rate_init=0.001,
+                         max_iter=500, tol=1e-4, early_stopping=False, random_state=42)
 
-# Train the model with SGD optimizer
-start_time_sgd = time.time()
-history_sgd = model.fit(X_train, y_train, epochs=1000, batch_size=10, verbose=0)
-end_time_sgd = time.time()
-training_time_sgd = end_time_sgd - start_time_sgd
+mlp_mini_batch = MLPClassifier(hidden_layer_sizes=(100, 50), activation='relu', alpha=0.0001, solver='adam',
+                               batch_size=64, learning_rate='constant', learning_rate_init=0.001,
+                               max_iter=500, tol=1e-4, early_stopping=False, random_state=42)
 
-# Evaluate the model on test data with SGD optimizer
-test_loss_sgd, test_accuracy_sgd = model.evaluate(X_test, y_test, verbose=0)
+mlp_lbfgs = MLPClassifier(hidden_layer_sizes=(100, 50), activation='relu', alpha=0.0001, solver='lbfgs',
+                          batch_size='auto', learning_rate='constant', learning_rate_init=0.001,
+                          max_iter=500, tol=1e-4, early_stopping=False, random_state=42)
 
-# Compile the model with Adam optimizer
-model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+# Fit the MLP classifiers
+mlp_sgd.fit(X_train, y_train)
+mlp_adam.fit(X_train, y_train)
+mlp_mini_batch.fit(X_train, y_train)
+mlp_lbfgs.fit(X_train, y_train)
 
-# Train the model with Adam optimizer
-start_time_adam = time.time()
-history_adam = model.fit(X_train, y_train, epochs=1000, batch_size=10, verbose=0)
-end_time_adam = time.time()
-training_time_adam = end_time_adam - start_time_adam
+# Predict on the test data
+y_pred_sgd = mlp_sgd.predict(X_test)
+y_pred_adam = mlp_adam.predict(X_test)
+y_pred_mini_batch = mlp_mini_batch.predict(X_test)
+y_pred_lbfgs = mlp_lbfgs.predict(X_test)
 
-# Evaluate the model on test data with Adam optimizer
-test_loss_adam, test_accuracy_adam = model.evaluate(X_test, y_test, verbose=0)
+# Calculate accuracies
+accuracy_sgd = accuracy_score(y_test, y_pred_sgd)
+accuracy_adam = accuracy_score(y_test, y_pred_adam)
+accuracy_mini_batch = accuracy_score(y_test, y_pred_mini_batch)
+accuracy_lbfgs = accuracy_score(y_test, y_pred_lbfgs)
 
-# Print results and observations
-print("Results:")
-print("SGD Optimizer:")
-print(" - Test Loss:", test_loss_sgd)
-print(" - Test Accuracy:", test_accuracy_sgd)
-print(" - Training Time:", training_time_sgd, "seconds")
-
-print("\nAdam Optimizer:")
-print(" - Test Loss:", test_loss_adam)
-print(" - Test Accuracy:", test_accuracy_adam)
-print(" - Training Time:", training_time_adam, "seconds")
-
-print("\nObservations:")
-print("- Adam optimizer generally converges faster and achieves better accuracy compared to SGD.")
-print("- This is expected as Adam adapts the learning rate dynamically, which can lead to faster convergence.")
-print("- SGD has a more straightforward update rule, but it might require tuning the learning rate and momentum for better performance.")
+# Print accuracies
+print("MLP with SGD Optimizer Accuracy:", accuracy_sgd)
+print("MLP with Adam Optimizer Accuracy:", accuracy_adam)
+print("MLP with Mini-Batch Gradient Descent Accuracy:", accuracy_mini_batch)
+print("MLP with LBFGS Optimizer Accuracy:", accuracy_lbfgs)
