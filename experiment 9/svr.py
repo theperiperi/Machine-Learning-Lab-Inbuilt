@@ -1,88 +1,62 @@
-import numpy as np
 import pandas as pd
-from sklearn import datasets
+import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.svm import SVR
 from sklearn.linear_model import LinearRegression
+from sklearn.datasets import load_breast_cancer
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 
-# Load Iris dataset (used for regression in this experiment)
-iris = datasets.load_iris()
-X = iris.data
-y = iris.target
+# Load breast cancer dataset
+X, y = load_breast_cancer(return_X_y=True)
 
-# Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Feature scaling
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
 
-# Initialize SVR models with different kernels
-svr_linear = SVR(kernel='linear')
-svr_rbf = SVR(kernel='rbf')
-svr_sigmoid = SVR(kernel='sigmoid')
-svr_poly = SVR(kernel='poly')
+# Split the data into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-# Define hyperparameter grids for SVR models
-param_grid_linear = {
+# Define the SVR regressor
+svr = SVR()
+
+# Define the parameter grid for SVR
+param_grid_svr = {
     'C': [0.1, 1, 10],
-    'epsilon': [0.1, 0.01, 0.001]
-}
-
-param_grid_rbf = {
-    'C': [0.1, 1, 10],
-    'epsilon': [0.1, 0.01, 0.001],
+    'kernel': ['linear', 'rbf', 'poly'],
     'gamma': ['scale', 'auto']
 }
 
-param_grid_sigmoid = {
-    'C': [0.1, 1, 10],
-    'epsilon': [0.1, 0.01, 0.001],
-    'gamma': ['scale', 'auto']
-}
+# Create the GridSearchCV object for SVR
+grid_search_svr = GridSearchCV(estimator=svr, param_grid=param_grid_svr, cv=3, scoring='neg_mean_squared_error', n_jobs=-1)
 
-param_grid_poly = {
-    'C': [0.1, 1, 10],
-    'epsilon': [0.1, 0.01, 0.001],
-    'gamma': ['scale', 'auto'],
-    'degree': [2, 3, 4]
-}
+# Fit the grid search to the data for SVR
+grid_search_svr.fit(X_train, y_train)
 
-# Perform GridSearchCV for each SVR model
-grid_search_linear = GridSearchCV(svr_linear, param_grid_linear, cv=5, scoring='neg_mean_squared_error')
-grid_search_rbf = GridSearchCV(svr_rbf, param_grid_rbf, cv=5, scoring='neg_mean_squared_error')
-grid_search_sigmoid = GridSearchCV(svr_sigmoid, param_grid_sigmoid, cv=5, scoring='neg_mean_squared_error')
-grid_search_poly = GridSearchCV(svr_poly, param_grid_poly, cv=5, scoring='neg_mean_squared_error')
+# Best parameters found by GridSearchCV for SVR
+best_params_svr = grid_search_svr.best_params_
+print("Best Parameters for SVR:", best_params_svr)
 
-# Fit the GridSearchCV to the training data
-grid_search_linear.fit(X_train, y_train)
-grid_search_rbf.fit(X_train, y_train)
-grid_search_sigmoid.fit(X_train, y_train)
-grid_search_poly.fit(X_train, y_train)
+# Use the best SVR model found by GridSearchCV
+best_svr_model = grid_search_svr.best_estimator_
 
-# Get the best SVR models
-best_svr_linear = grid_search_linear.best_estimator_
-best_svr_rbf = grid_search_rbf.best_estimator_
-best_svr_sigmoid = grid_search_sigmoid.best_estimator_
-best_svr_poly = grid_search_poly.best_estimator_
+# Predict on the test data using the best SVR model
+y_pred_svr = best_svr_model.predict(X_test)
 
-# Make predictions on the testing data
-y_pred_linear = best_svr_linear.predict(X_test)
-y_pred_rbf = best_svr_rbf.predict(X_test)
-y_pred_sigmoid = best_svr_sigmoid.predict(X_test)
-y_pred_poly = best_svr_poly.predict(X_test)
+# Calculate RMSE for SVR
+rmse_svr = np.sqrt(mean_squared_error(y_test, y_pred_svr))
+print("SVR GridSearchCV RMSE:", rmse_svr)
 
-# Calculate Mean Squared Error (MSE) for each SVR model
-mse_linear = mean_squared_error(y_test, y_pred_linear)
-mse_rbf = mean_squared_error(y_test, y_pred_rbf)
-mse_sigmoid = mean_squared_error(y_test, y_pred_sigmoid)
-mse_poly = mean_squared_error(y_test, y_pred_poly)
-
-print("Mean Squared Error for Linear SVR:", mse_linear)
-print("Mean Squared Error for RBF SVR:", mse_rbf)
-print("Mean Squared Error for Sigmoid SVR:", mse_sigmoid)
-print("Mean Squared Error for Polynomial SVR:", mse_poly)
-
-# Linear Regression for comparison
+# Define the Linear Regression model
 linear_reg = LinearRegression()
+
+# Fit the Linear Regression model
 linear_reg.fit(X_train, y_train)
-y_pred_lr = linear_reg.predict(X_test)
-mse_lr = mean_squared_error(y_test, y_pred_lr)
-print("Mean Squared Error for Linear Regression:", mse_lr)
+
+# Predict on the test data using Linear Regression
+y_pred_linear_reg = linear_reg.predict(X_test)
+
+# Calculate RMSE for Linear Regression
+rmse_linear_reg = np.sqrt(mean_squared_error(y_test, y_pred_linear_reg))
+print("Linear Regression RMSE:", rmse_linear_reg)

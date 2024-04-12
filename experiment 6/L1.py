@@ -21,9 +21,7 @@ X_train=scaler.fit_transform(X_train)
 X_test=scaler.transform(X_test)
 
 # Create an MLP Classifier with L1 Regularization
-mlp_l1 = MLPClassifier(hidden_layer_sizes=(100, 50), activation='relu', alpha=0.01, solver='adam',
-                       batch_size='auto', learning_rate='constant', learning_rate_init=0.001,
-                       max_iter=500, tol=1e-4, early_stopping=False, random_state=42)
+mlp_l1 = MLPClassifier(hidden_layer_sizes=(100, 50),alpha=0.01,max_iter=500 ,random_state=42)
 
 # Fit the model
 mlp_l1.fit(X_train, y_train)

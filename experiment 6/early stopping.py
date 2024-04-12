@@ -32,10 +32,7 @@ y_combined = np.hstack((y, y))  # Use original labels for both original and nois
 # Split the combined data into train and test sets
 X_train_comb, X_test_comb, y_train_comb, y_test_comb = train_test_split(X_combined, y_combined, test_size=0.2, random_state=42)
 # Create an MLP Classifier with Early Stopping
-mlp_early_stop = MLPClassifier(hidden_layer_sizes=(100, 50), activation='relu', alpha=0.0001, solver='adam',
-                               batch_size='auto', learning_rate='constant', learning_rate_init=0.001,
-                               max_iter=500, tol=1e-4, early_stopping=True, validation_fraction=0.1,
-                               n_iter_no_change=10, random_state=42)
+mlp_early_stop = MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=500,early_stopping=True)
 
 # Fit the model
 mlp_early_stop.fit(X_train, y_train)

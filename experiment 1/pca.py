@@ -21,7 +21,7 @@ print("Explained Variance Ratio:", explained_variance_ratio)
 print("Total Variance Explained by 2 Components:", total_variance_explained)
 
 # Visualize PCA components
-plt.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.8, edgecolors='w')
+plt.scatter(X_pca[:, 0], X_pca[:, 1])
 plt.xlabel('Principal Component 1')
 plt.ylabel('Principal Component 2')
 plt.title('PCA Visualization')

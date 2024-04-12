@@ -27,9 +27,6 @@ X_noisy = X + np.random.normal(0, 0.05, X.shape)
 X_combined = np.vstack((X, X_noisy))
 y_combined = np.hstack((y, y))  # Use original labels for both original and noisy data
 
-# Split the combined data into train and test sets
-X_train_comb, X_test_comb, y_train_comb, y_test_comb = train_test_split(X_combined, y_combined, test_size=0.2, random_state=42)
-
 # Create noisy data (Gaussian noise)
 X_noisy = X_train + np.random.normal(0, 0.05, X_train.shape)
 
