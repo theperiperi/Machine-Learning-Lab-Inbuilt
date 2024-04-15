@@ -3,19 +3,23 @@ import numpy as np
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.svm import SVR
 from sklearn.linear_model import LinearRegression
-from sklearn.datasets import load_breast_cancer
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 
 # Load breast cancer dataset
-X, y = load_breast_cancer(return_X_y=True)
-
-# Feature scaling
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+df = pd.read_csv("data.csv")
+X = df.drop(["diagnosis"], axis=1)
+df["diagnosis"] = df["diagnosis"].map({"M": 1, "B": 0})
+y = df["diagnosis"]
+X = X.fillna(np.mean(X))
 
 # Split the data into train and test sets
-X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Standardize the data
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
 
 # Define the SVR regressor
 svr = SVR()
