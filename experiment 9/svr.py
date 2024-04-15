@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.svm import SVR
 from sklearn.linear_model import LinearRegression
@@ -29,7 +28,7 @@ param_grid_svr = {
 }
 
 # Create the GridSearchCV object for SVR
-grid_search_svr = GridSearchCV(estimator=svr, param_grid=param_grid_svr, cv=3, scoring='neg_mean_squared_error', n_jobs=-1)
+grid_search_svr = GridSearchCV(estimator=svr, param_grid=param_grid_svr)
 
 # Fit the grid search to the data for SVR
 grid_search_svr.fit(X_train, y_train)

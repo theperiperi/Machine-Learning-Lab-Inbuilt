@@ -23,11 +23,17 @@ l1: alpha=0.01
 l2: alpha=0.0001
 no reg: alpha=0
 early_stopping:=True 
+augmented:from imblearn.over_sampling import SMOTE
+smote = SMOTE(random_state=42)
+X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
++noise:X_train =X_train+ np.random.normal(0, 0.1, X_train.shape)  # Mean 0, Standard deviation 0.1
 
-X_noisy = X + np.random.normal(0, 0.05, X.shape)
-X_combined = np.vstack((X, X_noisy))
-y_combined = np.hstack((y, y))  # Use original labels for both original and noisy data
+optimization: solvers:adam,sgd,lbfgs, mini batch batch_size 
 
-X_noisy = X_train + np.random.normal(0, 0.05, X_train.shape)
-X_augmented = np.vstack((X_train, X_noisy))
-y_augmented = np.hstack((y_train, y_train))
+from sklearn.svm import SVC
+from sklearn.model_selection import GridSearchCV
+param_grid = {
+    'C': [0.1, 1, 10, 100],
+    'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
+    'gamma': ['scale', 'auto']
+}grid_search = GridSearchCV(estimator=svm, param_grid=param_grid)

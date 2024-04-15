@@ -19,19 +19,19 @@ X = X.fillna(np.mean(X))
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Adding noise to training data
-noise = np.random.normal(0, 0.1, X_train.shape)  # Mean 0, Standard deviation 0.1
-X_train_noisy = X_train + noise
+X_train+=np.random.normal(0, 0.1, X_train.shape)  # Mean 0, Standard deviation 0.1
+
 
 # Standardize the features
 scaler = StandardScaler()
-X_train_noisy = scaler.fit_transform(X_train_noisy)
+X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
 # Initialize MLP classifier
 mlp_classifier = MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=42)
 
 # Train the classifier on noisy data
-mlp_classifier.fit(X_train_noisy, y_train)
+mlp_classifier.fit(X_train, y_train)
 
 # Predict on the test data
 y_pred = mlp_classifier.predict(X_test)

@@ -30,7 +30,7 @@ param_grid = {
 }
 
 # Create the GridSearchCV object
-grid_search = GridSearchCV(estimator=svm, param_grid=param_grid, cv=5, scoring='accuracy', n_jobs=-1)
+grid_search = GridSearchCV(estimator=svm, param_grid=param_grid)
 
 # Fit the grid search to the data
 grid_search.fit(X_train, y_train)
