@@ -15,3 +15,19 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 
 from sklearn.linear_model import Perceptron
+
+from sklearn.neural_network import MLPClassifier
+mlp_classifier = MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=42)
+
+l1: alpha=0.01
+l2: alpha=0.0001
+no reg: alpha=0
+early_stopping:=True 
+
+X_noisy = X + np.random.normal(0, 0.05, X.shape)
+X_combined = np.vstack((X, X_noisy))
+y_combined = np.hstack((y, y))  # Use original labels for both original and noisy data
+
+X_noisy = X_train + np.random.normal(0, 0.05, X_train.shape)
+X_augmented = np.vstack((X_train, X_noisy))
+y_augmented = np.hstack((y_train, y_train))

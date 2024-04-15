@@ -1,50 +1,48 @@
 import pandas as pd
 import numpy as np
-from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score
+from imblearn.over_sampling import SMOTE
 
-df=pd.read_csv("data.csv")
+# Load the breast cancer dataset
+url = "data.csv"
+df = pd.read_csv(url)
 
-# Load breast cancer dataset
-X=df.drop("diagnosis",axis=1)
-y=df["diagnosis"]
+# Selecting columns for MLP
+X = df.drop('diagnosis', axis=1)  # Features
+y = df['diagnosis']  # Target
 
-X=X.fillna(np.mean(X))
-# Split the data into train and test sets
+X = X.fillna(np.mean(X))
+
+# Check class distribution
+#print(y.value_counts())
+
+# Split data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+# Standardize the features
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
 
-scaler=StandardScaler()
-X_train=scaler.fit_transform(X_train)
-X_test=scaler.transform(X_test)
+# Apply SMOTE to balance classes
+smote = SMOTE(random_state=42)
+X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
 
-# Create noisy data (Gaussian noise)
-X_noisy = X + np.random.normal(0, 0.05, X.shape)
+# Initialize MLP classifier
+mlp_classifier = MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=42)
 
-# Combine original data and noisy data
-X_combined = np.vstack((X, X_noisy))
-y_combined = np.hstack((y, y))  # Use original labels for both original and noisy data
-
-# Create noisy data (Gaussian noise)
-X_noisy = X_train + np.random.normal(0, 0.05, X_train.shape)
-
-# Combine original data and noisy data
-X_augmented = np.vstack((X_train, X_noisy))
-y_augmented = np.hstack((y_train, y_train))  # Use original labels for both original and noisy data
-
-# Create an MLP Classifier for augmented data
-mlp_augmented = MLPClassifier(hidden_layer_sizes=(100, 50), activation='relu', alpha=0.0001, solver='adam',
-                              batch_size='auto', learning_rate='constant', learning_rate_init=0.001,
-                              max_iter=500, tol=1e-4, early_stopping=False, random_state=42)
-
-# Fit the model
-mlp_augmented.fit(X_augmented, y_augmented)
+# Train the classifier with SMOTE balanced data
+mlp_classifier.fit(X_train_smote, y_train_smote)
 
 # Predict on the test data
-y_pred_augmented = mlp_augmented.predict(X_test)
+y_pred = mlp_classifier.predict(X_test)
 
 # Calculate accuracy
-accuracy_augmented = accuracy_score(y_test, y_pred_augmented)
-print("MLP with Data Augmentation Only Accuracy:", accuracy_augmented)
+accuracy = accuracy_score(y_test, y_pred)
+
+print("\nAfter SMOTE:")
+print(pd.Series(y_train_smote).value_counts())
+print("\nMulti-Layer Perceptron (MLP) Accuracy with SMOTE:", accuracy)

@@ -1,41 +1,42 @@
 import pandas as pd
 import numpy as np
-from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score
 
-df=pd.read_csv("data.csv")
+# Load the breast cancer dataset
+url = "data.csv"
+df = pd.read_csv(url)
 
-# Load breast cancer dataset
-X=df.drop("diagnosis",axis=1)
-y=df["diagnosis"]
+# Selecting columns for MLP
+X = df.drop('diagnosis', axis=1)  # Features
+y = df['diagnosis']  # Target
 
-X=X.fillna(np.mean(X))
-# Split the data into train and test sets
+X = X.fillna(np.mean(X))
+
+# Split data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-scaler=StandardScaler()
-X_train=scaler.fit_transform(X_train)
-X_test=scaler.transform(X_test)
+# Adding noise to training data
+noise = np.random.normal(0, 0.1, X_train.shape)  # Mean 0, Standard deviation 0.1
+X_train_noisy = X_train + noise
 
-X_noisy = X_train + np.random.normal(0, 0.05, X_train.shape)
+# Standardize the features
+scaler = StandardScaler()
+X_train_noisy = scaler.fit_transform(X_train_noisy)
+X_test = scaler.transform(X_test)
 
-# Combine original data and noisy data
-X_combined = np.vstack((X_train, X_noisy))
-y_combined = np.hstack((y_train, y_train))  # Use original labels for both original and noisy data
+# Initialize MLP classifier
+mlp_classifier = MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=42)
 
-# Create an MLP Classifier for combined data
-mlp_combined = MLPClassifier(hidden_layer_sizes=(100, 50), activation='relu', alpha=0.0001, solver='adam',
-                             batch_size='auto', learning_rate='constant', learning_rate_init=0.001,
-                             max_iter=500, tol=1e-4, early_stopping=False, random_state=42)
-
-# Fit the model
-mlp_combined.fit(X_combined, y_combined)
+# Train the classifier on noisy data
+mlp_classifier.fit(X_train_noisy, y_train)
 
 # Predict on the test data
-y_pred_combined = mlp_combined.predict(X_test)
+y_pred = mlp_classifier.predict(X_test)
 
 # Calculate accuracy
-accuracy_combined = accuracy_score(y_test, y_pred_combined)
-print("MLP with Original + Noisy Data Combined Accuracy:", accuracy_combined)
+accuracy = accuracy_score(y_test, y_pred)
+
+print("Multi-Layer Perceptron (MLP) Accuracy with Noisy Data:", accuracy)
